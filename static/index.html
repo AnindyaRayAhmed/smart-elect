@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartElect - Guided Civic System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        slate: { 850: '#1e293b', 900: '#0f172a', 950: '#020617' },
+                        brand: { 400: '#818cf8', 500: '#6366f1', 600: '#4f46e5' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; }
+        
+        .glass-card {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .fade-enter { animation: fadeEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .fade-exit { animation: fadeExit 0.3s ease-in forwards; }
+        
+        @keyframes fadeEnter {
+            from { opacity: 0; transform: translateY(15px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes fadeExit {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-10px); }
+        }
+
+        .gradient-text {
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 relative overflow-hidden">
+
+    <!-- Background Accents -->
+    <div class="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] rounded-full bg-brand-600/10 blur-[120px] pointer-events-none"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] rounded-full bg-purple-600/10 blur-[120px] pointer-events-none"></div>
+
+    <!-- Header -->
+    <header class="w-full max-w-4xl flex justify-between items-center mb-10 z-10">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center shadow-lg shadow-brand-500/20">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight">SmartElect</h1>
+                <p class="text-xs text-slate-400 font-medium uppercase tracking-wider">Deterministic Civic Engine</p>
+            </div>
+        </div>
+        
+        <div class="flex bg-slate-900/80 p-1 rounded-lg border border-slate-800">
+            <button class="px-4 py-1.5 text-xs font-semibold rounded-md bg-slate-800 text-white shadow-sm">Guided Mode</button>
+            <button class="px-4 py-1.5 text-xs font-semibold rounded-md text-slate-400 hover:text-white transition">Explore</button>
+        </div>
+    </header>
+
+    <!-- Main Stage Container (Not a chatbox) -->
+    <main class="w-full max-w-4xl flex flex-col z-10 relative">
+        
+        <!-- Active Response Card Area -->
+        <div id="stage" class="min-h-[400px] flex items-center justify-center mb-8">
+            <!-- Initial Welcome State -->
+            <div id="initial-state" class="glass-card w-full rounded-2xl p-8 md:p-12 text-center fade-enter">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">How can I help you today?</h2>
+                <p class="text-slate-400 max-w-xl mx-auto mb-10 leading-relaxed">
+                    SmartElect provides clear, verified civic guidance. Select an option below or type your question.
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto text-sm">
+                    <button class="suggestion-btn p-4 rounded-xl border border-slate-800 bg-slate-800/50 hover:bg-slate-800 transition text-slate-300 hover:text-white hover:border-brand-500/50">
+                        Verify eligibility
+                    </button>
+                    <button class="suggestion-btn p-4 rounded-xl border border-slate-800 bg-slate-800/50 hover:bg-slate-800 transition text-slate-300 hover:text-white hover:border-brand-500/50">
+                        Locate polling sector
+                    </button>
+                    <button class="suggestion-btn p-4 rounded-xl border border-slate-800 bg-slate-800/50 hover:bg-slate-800 transition text-slate-300 hover:text-white hover:border-brand-500/50">
+                        Register to vote
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sticky Input Area -->
+        <form id="query-form" class="relative group">
+            <div class="absolute inset-0 bg-gradient-to-r from-brand-500 to-purple-600 rounded-2xl blur opacity-20 group-hover:opacity-30 transition duration-500"></div>
+            <div class="relative glass-card rounded-2xl flex items-center p-2 border border-slate-700/50 bg-slate-900/80">
+                <input type="text" id="user-input" class="w-full bg-transparent text-white text-base py-4 pl-6 pr-14 focus:outline-none placeholder-slate-500" placeholder="Enter your request (e.g., 'How do I register to vote?')..." autocomplete="off">
+                <button type="submit" class="absolute right-4 w-10 h-10 flex items-center justify-center bg-brand-600 hover:bg-brand-500 text-white rounded-xl transition shadow-lg shadow-brand-500/25">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+        </form>
+    </main>
+
+    <script>
+        const form = document.getElementById('query-form');
+        const input = document.getElementById('user-input');
+        const stage = document.getElementById('stage');
+        
+        // Handle suggestion buttons
+        document.querySelectorAll('.suggestion-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                input.value = btn.textContent.trim();
+                form.dispatchEvent(new Event('submit'));
+            });
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = input.value.trim();
+            if (!text) return;
+
+            // Fade out current content
+            const currentContent = stage.firstElementChild;
+            currentContent.classList.replace('fade-enter', 'fade-exit');
+            
+            setTimeout(() => {
+                // Show loading
+                stage.innerHTML = `
+                    <div class="flex flex-col items-center justify-center space-y-4 fade-enter">
+                        <div class="w-12 h-12 border-4 border-slate-800 border-t-brand-500 rounded-full animate-spin"></div>
+                        <p class="text-brand-400 font-medium tracking-wider text-sm animate-pulse">Processing your request...</p>
+                    </div>
+                `;
+            }, 300);
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setTimeout(() => renderResponseCard(data, text), 800);
+                } else {
+                    throw new Error('API Error');
+                }
+            } catch (err) {
+                setTimeout(() => {
+                    stage.innerHTML = `
+                        <div class="glass-card rounded-2xl p-8 border-red-500/30 text-center fade-enter max-w-lg">
+                            <svg class="w-12 h-12 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            <h3 class="text-lg font-medium text-white mb-2">System Offline</h3>
+                            <p class="text-slate-400 text-sm">Network inaccessible. Standby for reconnection.</p>
+                        </div>
+                    `;
+                }, 800);
+            }
+            
+            input.value = '';
+        });
+
+        function renderResponseCard(data, query) {
+            let formattedContent = data.response.replace(/\n/g, '<br>');
+            
+            let cardHtml = `
+                <div class="w-full glass-card rounded-2xl overflow-hidden fade-enter flex flex-col md:flex-row shadow-2xl">
+                    
+                    <!-- System Metadata Panel (Left Side) -->
+                    <div class="md:w-1/3 bg-slate-900/90 border-b md:border-b-0 md:border-r border-slate-800 p-6 flex flex-col justify-between">
+                        <div>
+                            <div class="text-xs text-slate-500 font-medium mb-6 tracking-wide">System insights</div>
+                            
+                            <div class="mb-6">
+                                <span class="text-xs text-slate-400 block mb-1">Target Intent</span>
+                                <span class="inline-flex px-3 py-1 bg-slate-800 text-brand-300 rounded-md text-xs font-medium border border-slate-700/50">${data.intent}</span>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <span class="text-xs text-slate-400 block mb-1">Confidence Interval</span>
+                                <div class="flex items-center gap-3">
+                                    <div class="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                        <div class="h-full bg-gradient-to-r from-emerald-500 to-green-400" style="width: ${(data.confidence * 100)}%"></div>
+                                    </div>
+                                    <span class="text-sm font-mono text-emerald-400">${(data.confidence * 100).toFixed(0)}%</span>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <span class="text-xs text-slate-400 block mb-1">Primary Data Source</span>
+                                <div class="flex items-start gap-2">
+                                    <svg class="w-4 h-4 text-slate-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                                    <span class="text-sm text-slate-300 leading-tight">${data.source}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Content Area (Right Side) -->
+                    <div class="md:w-2/3 p-8 flex flex-col">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-2xl font-bold text-white tracking-tight">${data.title}</h3>
+                        </div>
+                        
+                        <div class="prose prose-invert prose-slate text-sm max-w-none text-slate-300 leading-relaxed flex-1">
+                            ${formattedContent}
+                        </div>
+                        
+                        <div class="mt-8 pt-6 border-t border-slate-800/50">
+                            <div class="flex items-start justify-between flex-wrap gap-4">
+                                <div>
+                                    <h4 class="text-sm font-semibold text-brand-400 mb-2 flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                        Next step
+                                    </h4>
+                                    <p class="text-sm text-slate-200 font-medium">${data.next_step}</p>
+                                </div>
+            `;
+
+            if (data.calendar_option && data.calendar_event) {
+                const icsData = "data:text/calendar;charset=utf8," + encodeURIComponent(data.calendar_event);
+                cardHtml += `
+                                <a href="${icsData}" download="${data.event_title.replace(/\\s+/g, '_')}.ics" class="inline-flex items-center justify-center px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-white text-sm font-medium rounded-lg transition group">
+                                    <svg class="w-4 h-4 mr-2 text-brand-400 group-hover:text-brand-300 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                    Add to Calendar
+                                </a>
+                `;
+            }
+
+            cardHtml += `
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            stage.innerHTML = cardHtml;
+        }
+    </script>
+</body>
+</html>

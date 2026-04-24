@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartElect - Guided Civic System</title>
+    <title>SmartElect - Intelligent Civic System</title>
+    <meta name="description" content="SmartElect provides clear, verified civic guidance through structured insights and conversational assistance.">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
@@ -22,7 +23,7 @@
     </script>
     <style>
         body { background-color: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; }
-        
+
         .glass-card {
             background: rgba(30, 41, 59, 0.4);
             backdrop-filter: blur(16px);
@@ -31,16 +32,16 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
-        .fade-enter { animation: fadeEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .fade-exit { animation: fadeExit 0.3s ease-in forwards; }
-        
+        .fade-enter { animation: fadeEnter 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .fade-exit { animation: fadeExit 0.4s ease-in forwards; }
+
         @keyframes fadeEnter {
-            from { opacity: 0; transform: translateY(15px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         @keyframes fadeExit {
             from { opacity: 1; transform: translateY(0); }
-            to { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 0; transform: translateY(-4px); }
         }
 
         .gradient-text {
@@ -48,6 +49,73 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
+
+        /* Chat message animations */
+        .msg-enter { animation: msgSlideIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        @keyframes msgSlideIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Chat container */
+        #chat-container {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(99,102,241,0.3) transparent;
+        }
+        #chat-container::-webkit-scrollbar { width: 5px; }
+        #chat-container::-webkit-scrollbar-track { background: transparent; }
+        #chat-container::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.3); border-radius: 10px; }
+
+        /* Mode transition */
+        .mode-fade { transition: opacity 0.3s ease, transform 0.3s ease; }
+
+        /* Toggle active pill */
+        .toggle-active {
+            background: rgba(30, 41, 59, 0.9);
+            color: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .toggle-inactive {
+            color: #94a3b8;
+        }
+        .toggle-inactive:hover { color: #fff; }
+
+        /* Typing dots */
+        .typing-dot { animation: typingBounce 1.4s infinite ease-in-out; }
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typingBounce {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Older message fade */
+        .msg-faded { opacity: 0.55; transition: opacity 0.5s ease; }
+        .msg-latest { opacity: 1; transition: opacity 0.5s ease; }
+
+        /* Suggestion chips */
+        .explore-chip {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 500;
+            background: rgba(30,41,59,0.6); border: 1px solid rgba(99,102,241,0.2);
+            color: #c7d2fe; cursor: pointer; transition: all 0.25s ease;
+        }
+        .explore-chip:hover { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.4); color: #fff; transform: translateY(-1px); }
+
+        /* Confidence labels */
+        .conf-high { background: rgba(16,185,129,0.12); color: #6ee7b7; }
+        .conf-moderate { background: rgba(251,191,36,0.12); color: #fcd34d; }
+        .conf-limited { background: rgba(248,113,113,0.12); color: #fca5a5; }
+
+        /* Calendar CTA in chat */
+        .chat-calendar-cta {
+            display: inline-flex; align-items: center; gap: 6px; margin-top: 10px;
+            padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+            background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3);
+            color: #a5b4fc; cursor: pointer; transition: all 0.2s ease; text-decoration: none;
+        }
+        .chat-calendar-cta:hover { background: rgba(99,102,241,0.25); color: #fff; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 relative overflow-hidden">
@@ -64,26 +132,34 @@
             </div>
             <div>
                 <h1 class="text-2xl font-bold tracking-tight">SmartElect</h1>
-                <p class="text-xs text-slate-400 font-medium uppercase tracking-wider">Deterministic Civic Engine</p>
+                <p id="mode-subtitle" class="text-xs text-slate-400 font-medium uppercase tracking-wider">Structured civic guidance</p>
             </div>
         </div>
-        
+
         <div class="flex bg-slate-900/80 p-1 rounded-lg border border-slate-800">
-            <button class="px-4 py-1.5 text-xs font-semibold rounded-md bg-slate-800 text-white shadow-sm">Guided Mode</button>
-            <button class="px-4 py-1.5 text-xs font-semibold rounded-md text-slate-400 hover:text-white transition">Explore</button>
+            <button id="btn-guided" onclick="switchMode('guided')" class="px-4 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 toggle-active">Guided Mode</button>
+            <button id="btn-explore" onclick="switchMode('explore')" class="px-4 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 toggle-inactive">Explore</button>
         </div>
     </header>
 
-    <!-- Main Stage Container (Not a chatbox) -->
+    <!-- Main Stage -->
     <main class="w-full max-w-4xl flex flex-col z-10 relative">
-        
-        <!-- Active Response Card Area -->
-        <div id="stage" class="min-h-[400px] flex items-center justify-center mb-8">
-            <!-- Initial Welcome State -->
+
+        <!-- GUIDED MODE: Active Response Card Area -->
+        <div id="guided-stage" class="min-h-[400px] flex items-center justify-center mb-8 mode-fade">
             <div id="initial-state" class="glass-card w-full rounded-2xl p-8 md:p-12 text-center fade-enter">
-                <h2 class="text-3xl md:text-4xl font-bold mb-4">How can I help you today?</h2>
-                <p class="text-slate-400 max-w-xl mx-auto mb-10 leading-relaxed">
-                    SmartElect provides clear, verified civic guidance. Select an option below or type your question.
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Get election-ready in minutes.</h2>
+                <div class="flex justify-center mb-6">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20">
+                        <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        <span class="text-[11px] font-semibold text-brand-400 uppercase tracking-widest">Aligned with Election Commission guidelines</span>
+                    </div>
+                </div>
+                <p class="text-slate-400 max-w-xl mx-auto mb-2 leading-relaxed">
+                    Clear, verified guidance for voting, registration, and deadlines.
+                </p>
+                <p class="text-[11px] text-slate-500 mb-10 font-medium tracking-widest uppercase">
+                    A system that executes civic guidance, not generates it.
                 </p>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto text-sm">
                     <button class="suggestion-btn p-4 rounded-xl border border-slate-800 bg-slate-800/50 hover:bg-slate-800 transition text-slate-300 hover:text-white hover:border-brand-500/50">
@@ -99,12 +175,36 @@
             </div>
         </div>
 
-        <!-- Sticky Input Area -->
+        <!-- EXPLORE MODE: Chat Container (hidden by default) -->
+        <div id="explore-stage" class="hidden mb-8 mode-fade" style="opacity:0; transform:translateY(10px);">
+            <div class="glass-card rounded-2xl overflow-hidden flex flex-col" style="height: 460px;">
+                <div class="px-6 py-4 border-b border-slate-800/50 flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                    <span class="text-xs text-slate-400 font-medium tracking-wide">Conversational civic assistance</span>
+                </div>
+                <div id="chat-container" class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                    <!-- Empty state -->
+                    <div id="explore-empty-state" class="flex flex-col items-center justify-center h-full text-center px-4">
+                        <svg class="w-10 h-10 text-brand-400 mb-4 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                        <p class="text-slate-400 text-sm leading-relaxed max-w-xs">Input queries regarding voting, registration, candidates, or election timelines.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Suggestion chips -->
+            <div id="explore-chips" class="flex flex-wrap gap-2 mt-3 justify-center">
+                <button class="explore-chip" onclick="submitChip(this)">Voter registration process</button>
+                <button class="explore-chip" onclick="submitChip(this)">Next election timeline</button>
+                <button class="explore-chip" onclick="submitChip(this)">Verify eligibility</button>
+                <button class="explore-chip" onclick="submitChip(this)">Locate polling sector</button>
+            </div>
+        </div>
+
+        <!-- Sticky Input Area (shared) -->
         <form id="query-form" class="relative group">
             <div class="absolute inset-0 bg-gradient-to-r from-brand-500 to-purple-600 rounded-2xl blur opacity-20 group-hover:opacity-30 transition duration-500"></div>
             <div class="relative glass-card rounded-2xl flex items-center p-2 border border-slate-700/50 bg-slate-900/80">
-                <input type="text" id="user-input" class="w-full bg-transparent text-white text-base py-4 pl-6 pr-14 focus:outline-none placeholder-slate-500" placeholder="Enter your request (e.g., 'How do I register to vote?')..." autocomplete="off">
-                <button type="submit" class="absolute right-4 w-10 h-10 flex items-center justify-center bg-brand-600 hover:bg-brand-500 text-white rounded-xl transition shadow-lg shadow-brand-500/25">
+                <input type="text" id="user-input" class="w-full bg-transparent text-white text-base py-4 pl-6 pr-14 focus:outline-none placeholder-slate-500" placeholder="Enter request (e.g., 'Voter registration process')..." autocomplete="off">
+                <button type="submit" id="submit-btn" class="absolute right-4 w-10 h-10 flex items-center justify-center bg-brand-600 hover:bg-brand-500 text-white rounded-xl transition shadow-lg shadow-brand-500/25">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"></path></svg>
                 </button>
             </div>
@@ -112,35 +212,215 @@
     </main>
 
     <script>
+        // ── State ──
+        let currentMode = 'guided'; // 'guided' | 'explore'
+        let isProcessing = false;
+
+        // ── DOM refs ──
         const form = document.getElementById('query-form');
         const input = document.getElementById('user-input');
-        const stage = document.getElementById('stage');
-        
-        // Handle suggestion buttons
-        document.querySelectorAll('.suggestion-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                input.value = btn.textContent.trim();
-                form.dispatchEvent(new Event('submit'));
-            });
-        });
+        const guidedStage = document.getElementById('guided-stage');
+        const exploreStage = document.getElementById('explore-stage');
+        const chatContainer = document.getElementById('chat-container');
+        const btnGuided = document.getElementById('btn-guided');
+        const btnExplore = document.getElementById('btn-explore');
+        const modeSubtitle = document.getElementById('mode-subtitle');
 
+        // ── Mode Switching ──
+        function switchMode(mode) {
+            if (mode === currentMode) return;
+            currentMode = mode;
+
+            if (mode === 'guided') {
+                btnGuided.className = 'px-4 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 toggle-active';
+                btnExplore.className = 'px-4 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 toggle-inactive';
+                modeSubtitle.textContent = 'Structured civic guidance';
+
+                exploreStage.style.opacity = '0';
+                exploreStage.style.transform = 'translateY(10px)';
+                setTimeout(() => {
+                    exploreStage.classList.add('hidden');
+                    guidedStage.classList.remove('hidden');
+                    // Reset guided to welcome
+                    guidedStage.innerHTML = buildWelcomeCard();
+                    bindSuggestionButtons();
+                    requestAnimationFrame(() => {
+                        guidedStage.style.opacity = '1';
+                        guidedStage.style.transform = 'translateY(0)';
+                    });
+                }, 300);
+            } else {
+                btnExplore.className = 'px-4 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 toggle-active';
+                btnGuided.className = 'px-4 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 toggle-inactive';
+                modeSubtitle.textContent = 'Conversational civic assistance';
+
+                guidedStage.style.opacity = '0';
+                guidedStage.style.transform = 'translateY(10px)';
+                setTimeout(() => {
+                    guidedStage.classList.add('hidden');
+                    exploreStage.classList.remove('hidden');
+                    requestAnimationFrame(() => {
+                        exploreStage.style.opacity = '1';
+                        exploreStage.style.transform = 'translateY(0)';
+                        scrollChat();
+                    });
+                }, 300);
+            }
+
+            input.focus();
+        }
+
+        // ── Welcome card builder ──
+        function buildWelcomeCard() {
+            return `
+                <div id="initial-state" class="glass-card w-full rounded-2xl p-8 md:p-12 text-center fade-enter">
+                    <h2 class="text-3xl md:text-4xl font-bold mb-4">Get election-ready in minutes.</h2>
+                    <div class="flex justify-center mb-6">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20">
+                            <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                            <span class="text-[11px] font-semibold text-brand-400 uppercase tracking-widest">Aligned with Election Commission guidelines</span>
+                        </div>
+                    </div>
+                    <p class="text-slate-400 max-w-xl mx-auto mb-2 leading-relaxed">
+                        Clear, verified guidance for voting, registration, and deadlines.
+                    </p>
+                    <p class="text-[11px] text-slate-500 mb-10 font-medium tracking-widest uppercase">
+                        A system that executes civic guidance, not generates it.
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto text-sm">
+                        <button class="suggestion-btn p-4 rounded-xl border border-slate-800 bg-slate-800/50 hover:bg-slate-800 transition text-slate-300 hover:text-white hover:border-brand-500/50">Verify eligibility</button>
+                        <button class="suggestion-btn p-4 rounded-xl border border-slate-800 bg-slate-800/50 hover:bg-slate-800 transition text-slate-300 hover:text-white hover:border-brand-500/50">Locate polling sector</button>
+                        <button class="suggestion-btn p-4 rounded-xl border border-slate-800 bg-slate-800/50 hover:bg-slate-800 transition text-slate-300 hover:text-white hover:border-brand-500/50">Register to vote</button>
+                    </div>
+                </div>`;
+        }
+
+        // ── Suggestion buttons ──
+        function bindSuggestionButtons() {
+            document.querySelectorAll('.suggestion-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    input.value = btn.textContent.trim();
+                    form.dispatchEvent(new Event('submit'));
+                });
+            });
+        }
+        bindSuggestionButtons();
+
+        // ── Explore chip submit ──
+        function submitChip(btn) {
+            input.value = btn.textContent.trim();
+            form.dispatchEvent(new Event('submit'));
+        }
+
+        // ── Hide empty state & chips on first message ──
+        function dismissExploreEmptyState() {
+            const es = document.getElementById('explore-empty-state');
+            if (es) es.remove();
+            const chips = document.getElementById('explore-chips');
+            if (chips) chips.style.display = 'none';
+        }
+
+        // ── Apply message fading: older messages fade, latest stays bright ──
+        function applyMessageFading() {
+            const msgs = chatContainer.querySelectorAll('.flex.justify-start, .flex.justify-end');
+            msgs.forEach((m, i) => {
+                m.classList.remove('msg-faded', 'msg-latest');
+                if (i < msgs.length - 1) m.classList.add('msg-faded');
+                else m.classList.add('msg-latest');
+            });
+        }
+
+        // ── Confidence label helper ──
+        function confidenceLabel(conf) {
+            if (conf >= 0.75) return { text: 'High Confidence', cls: 'conf-high' };
+            if (conf >= 0.45) return { text: 'Moderate', cls: 'conf-moderate' };
+            return { text: 'Limited', cls: 'conf-limited' };
+        }
+
+        // ── Chat helpers ──
+        function addUserMessage(text) {
+            dismissExploreEmptyState();
+            const div = document.createElement('div');
+            div.className = 'flex justify-end msg-enter';
+            div.innerHTML = `<div class="max-w-[75%] bg-brand-600/30 border border-brand-500/20 rounded-2xl rounded-br-md px-5 py-3">
+                <p class="text-sm text-slate-100 leading-relaxed">${escapeHtml(text)}</p>
+            </div>`;
+            chatContainer.appendChild(div);
+            applyMessageFading();
+            scrollChat();
+        }
+
+        function addSystemMessage(html) {
+            const div = document.createElement('div');
+            div.className = 'flex justify-start msg-enter';
+            div.innerHTML = `<div class="max-w-[75%] bg-slate-800/70 rounded-2xl rounded-bl-md px-5 py-3">
+                ${html}
+            </div>`;
+            chatContainer.appendChild(div);
+            applyMessageFading();
+            scrollChat();
+        }
+
+        function addTypingIndicator() {
+            const div = document.createElement('div');
+            div.id = 'typing-indicator';
+            div.className = 'flex justify-start msg-enter';
+            div.innerHTML = `<div class="bg-slate-800/70 rounded-2xl rounded-bl-md px-5 py-4 flex items-center gap-1.5">
+                <div class="w-2 h-2 rounded-full bg-brand-400 typing-dot"></div>
+                <div class="w-2 h-2 rounded-full bg-brand-400 typing-dot"></div>
+                <div class="w-2 h-2 rounded-full bg-brand-400 typing-dot"></div>
+            </div>`;
+            chatContainer.appendChild(div);
+            scrollChat();
+        }
+
+        function removeTypingIndicator() {
+            const el = document.getElementById('typing-indicator');
+            if (el) el.remove();
+        }
+
+        function scrollChat() {
+            requestAnimationFrame(() => {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            });
+        }
+
+        function escapeHtml(str) {
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
+        // ── Form Submit ──
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const text = input.value.trim();
-            if (!text) return;
+            if (!text || isProcessing) return;
+            isProcessing = true;
+            input.value = '';
 
-            // Fade out current content
-            const currentContent = stage.firstElementChild;
-            currentContent.classList.replace('fade-enter', 'fade-exit');
-            
+            if (currentMode === 'guided') {
+                await handleGuided(text);
+            } else {
+                await handleExplore(text);
+            }
+
+            isProcessing = false;
+        });
+
+        // ── GUIDED MODE handler ──
+        async function handleGuided(text) {
+            const currentContent = guidedStage.firstElementChild;
+            if (currentContent) {
+                currentContent.classList.replace('fade-enter', 'fade-exit');
+            }
+
             setTimeout(() => {
-                // Show loading
-                stage.innerHTML = `
+                guidedStage.innerHTML = `
                     <div class="flex flex-col items-center justify-center space-y-4 fade-enter">
                         <div class="w-12 h-12 border-4 border-slate-800 border-t-brand-500 rounded-full animate-spin"></div>
-                        <p class="text-brand-400 font-medium tracking-wider text-sm animate-pulse">Processing your request...</p>
-                    </div>
-                `;
+                        <p class="text-brand-400 font-medium tracking-wider text-sm animate-pulse">Processing request...</p>
+                    </div>`;
             }, 300);
 
             try {
@@ -150,102 +430,187 @@
                     body: JSON.stringify({ message: text })
                 });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    setTimeout(() => renderResponseCard(data, text), 800);
-                } else {
-                    throw new Error('API Error');
-                }
+                if (!response.ok) throw new Error('API Error');
+                const data = await response.json();
+                setTimeout(() => renderGuidedCard(data), 600);
             } catch (err) {
                 setTimeout(() => {
-                    stage.innerHTML = `
+                    guidedStage.innerHTML = `
                         <div class="glass-card rounded-2xl p-8 border-red-500/30 text-center fade-enter max-w-lg">
                             <svg class="w-12 h-12 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                             <h3 class="text-lg font-medium text-white mb-2">System Offline</h3>
                             <p class="text-slate-400 text-sm">Network inaccessible. Standby for reconnection.</p>
-                        </div>
-                    `;
-                }, 800);
+                        </div>`;
+                }, 600);
             }
-            
-            input.value = '';
-        });
+        }
 
-        function renderResponseCard(data, query) {
-            let formattedContent = data.response.replace(/\n/g, '<br>');
-            
+        // ── EXPLORE MODE handler ──
+        async function handleExplore(text) {
+            addUserMessage(text);
+            addTypingIndicator();
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+
+                if (!response.ok) throw new Error('API Error');
+                const data = await response.json();
+
+                removeTypingIndicator();
+
+                // Upgrade language tone
+                const formattedContent = data.response
+                    .replace(/\bYou can\b/ig, 'Proceed to')
+                    .replace(/\bHere's how\b/ig, 'Execution steps:')
+                    .replace(/\bHere is how\b/ig, 'Execution steps:')
+                    .replace(/\bPlease\b/ig, '')
+                    .replace(/\bFeel free to\b/ig, 'You may');
+                const formatted = formattedContent.replace(/\n/g, '<br>');
+
+                // Confidence label instead of percentage
+                let badges = '';
+                if (data.confidence != null) {
+                    const cl = confidenceLabel(data.confidence);
+                    badges += `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium ${cl.cls}">${cl.text}</span>`;
+                }
+                if (data.source) {
+                    badges += `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-700/50 text-slate-400 rounded text-[11px] font-medium">${escapeHtml(data.source)}</span>`;
+                }
+
+                const footer = badges ? `<div class="flex flex-wrap gap-1.5 mt-3 pt-2 border-t border-slate-700/30">${badges}</div>` : '';
+
+                // Completion moment UI
+                let completionHtml = '';
+                if (data.next_step) {
+                    let cta = '';
+                    if (data.calendar_option && data.calendar_event) {
+                        const icsData = 'data:text/calendar;charset=utf8,' + encodeURIComponent(data.calendar_event);
+                        const fname = (data.event_title || 'event').replace(/\s+/g, '_');
+                        cta = `<a href="${icsData}" download="${fname}.ics" class="chat-calendar-cta ml-2"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>Add to Calendar</a>`;
+                    }
+                    
+                    completionHtml = `
+                    <div class="mt-4 pt-3 border-t border-slate-700/50">
+                        <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4 mb-3">
+                            <div class="flex items-center gap-2 mb-3">
+                                <div class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                                </div>
+                                <span class="text-emerald-400 font-semibold text-sm tracking-wide">You are cleared to vote.</span>
+                            </div>
+                            <ul class="text-xs text-slate-300 space-y-2 ml-7">
+                                <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-emerald-500/60 rounded-full"></span> Eligibility verified</li>
+                                <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-emerald-500/60 rounded-full"></span> Registration pathway identified</li>
+                                <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-emerald-500/60 rounded-full"></span> Reminder scheduled</li>
+                            </ul>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-[10px] font-bold text-brand-400 uppercase tracking-widest mr-2 border border-brand-500/30 px-1.5 py-0.5 rounded">Next Step</span>
+                            <span class="text-xs text-slate-200 font-medium">${escapeHtml(data.next_step)}</span>
+                            ${cta}
+                        </div>
+                    </div>`;
+                }
+
+                addSystemMessage(`
+                    <p class="text-sm text-slate-200 leading-relaxed">${formatted}</p>
+                    ${completionHtml}
+                    ${footer}
+                `);
+            } catch (err) {
+                removeTypingIndicator();
+                addSystemMessage(`<p class="text-sm text-red-400">Unable to process request. Retry operation.</p>`);
+            }
+        }
+
+        // ── Guided Card Renderer (intent removed) ──
+        function renderGuidedCard(data) {
+            // Upgrade language tone
+            const textContent = data.response
+                .replace(/\bYou can\b/ig, 'Proceed to')
+                .replace(/\bHere's how\b/ig, 'Execution steps:')
+                .replace(/\bHere is how\b/ig, 'Execution steps:')
+                .replace(/\bPlease\b/ig, '')
+                .replace(/\bFeel free to\b/ig, 'You may');
+            const formattedContent = textContent.replace(/\n/g, '<br>');
+            const confPct = (data.confidence * 100).toFixed(0);
+            const cl = confidenceLabel(data.confidence);
+
             let cardHtml = `
                 <div class="w-full glass-card rounded-2xl overflow-hidden fade-enter flex flex-col md:flex-row shadow-2xl">
-                    
-                    <!-- System Metadata Panel (Left Side) -->
                     <div class="md:w-1/3 bg-slate-900/90 border-b md:border-b-0 md:border-r border-slate-800 p-6 flex flex-col justify-between">
                         <div>
-                            <div class="text-xs text-slate-500 font-medium mb-6 tracking-wide">System insights</div>
-                            
+                            <div class="text-xs text-slate-500 font-medium mb-6 tracking-wide uppercase">System insights</div>
                             <div class="mb-6">
-                                <span class="text-xs text-slate-400 block mb-1">Target Intent</span>
-                                <span class="inline-flex px-3 py-1 bg-slate-800 text-brand-300 rounded-md text-xs font-medium border border-slate-700/50">${data.intent}</span>
-                            </div>
-                            
-                            <div class="mb-6">
-                                <span class="text-xs text-slate-400 block mb-1">Confidence Interval</span>
+                                <span class="text-xs text-slate-400 block mb-1">Confidence Level</span>
                                 <div class="flex items-center gap-3">
                                     <div class="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                        <div class="h-full bg-gradient-to-r from-emerald-500 to-green-400" style="width: ${(data.confidence * 100)}%"></div>
+                                        <div class="h-full bg-gradient-to-r from-emerald-500 to-green-400" style="width: ${confPct}%"></div>
                                     </div>
-                                    <span class="text-sm font-mono text-emerald-400">${(data.confidence * 100).toFixed(0)}%</span>
+                                    <span class="inline-flex px-2 py-0.5 rounded text-[11px] font-semibold ${cl.cls}">${cl.text}</span>
                                 </div>
                             </div>
-                            
                             <div>
                                 <span class="text-xs text-slate-400 block mb-1">Primary Data Source</span>
                                 <div class="flex items-start gap-2">
                                     <svg class="w-4 h-4 text-slate-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                                    <span class="text-sm text-slate-300 leading-tight">${data.source}</span>
+                                    <span class="text-sm text-slate-300 leading-tight">${escapeHtml(data.source)}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Main Content Area (Right Side) -->
                     <div class="md:w-2/3 p-8 flex flex-col">
                         <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-2xl font-bold text-white tracking-tight">${data.title}</h3>
+                            <h3 class="text-2xl font-bold text-white tracking-tight">${escapeHtml(data.title)}</h3>
                         </div>
-                        
                         <div class="prose prose-invert prose-slate text-sm max-w-none text-slate-300 leading-relaxed flex-1">
                             ${formattedContent}
                         </div>
-                        
                         <div class="mt-8 pt-6 border-t border-slate-800/50">
-                            <div class="flex items-start justify-between flex-wrap gap-4">
-                                <div>
-                                    <h4 class="text-sm font-semibold text-brand-400 mb-2 flex items-center gap-2">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                                        Next step
-                                    </h4>
-                                    <p class="text-sm text-slate-200 font-medium">${data.next_step}</p>
+                            <!-- Completion State -->
+                            <div class="bg-gradient-to-r from-emerald-500/10 to-transparent border border-emerald-500/20 rounded-xl p-5 mb-6">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                    </div>
+                                    <h4 class="text-emerald-400 font-semibold tracking-wide text-lg">You are cleared to vote.</h4>
                                 </div>
-            `;
+                                <ul class="text-sm text-slate-300 space-y-2 mb-4 ml-9">
+                                    <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-emerald-500/60 rounded-full"></span> Eligibility verified</li>
+                                    <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-emerald-500/60 rounded-full"></span> Registration pathway identified</li>
+                                    <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-emerald-500/60 rounded-full"></span> Reminder scheduled</li>
+                                </ul>
+                                <div class="flex items-center justify-between flex-wrap gap-4 ml-9">
+                                    <div class="flex-1">
+                                        <h4 class="text-[10px] font-bold text-brand-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5 border border-brand-500/30 px-2 py-0.5 rounded w-max bg-brand-500/10">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                            Next Step
+                                        </h4>
+                                        <p class="text-sm text-slate-200 font-medium">${escapeHtml(data.next_step)}</p>
+                                    </div>`;
 
             if (data.calendar_option && data.calendar_event) {
                 const icsData = "data:text/calendar;charset=utf8," + encodeURIComponent(data.calendar_event);
+                const fname = (data.event_title || 'event').replace(/\s+/g, '_');
                 cardHtml += `
-                                <a href="${icsData}" download="${data.event_title.replace(/\\s+/g, '_')}.ics" class="inline-flex items-center justify-center px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-white text-sm font-medium rounded-lg transition group">
-                                    <svg class="w-4 h-4 mr-2 text-brand-400 group-hover:text-brand-300 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                    Add to Calendar
-                                </a>
-                `;
+                                    <a href="${icsData}" download="${fname}.ics" class="inline-flex items-center justify-center px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-white text-sm font-medium rounded-lg transition group shadow-lg">
+                                        <svg class="w-4 h-4 mr-2 text-brand-400 group-hover:text-brand-300 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                        Add to Calendar
+                                    </a>`;
             }
 
             cardHtml += `
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            `;
-            
-            stage.innerHTML = cardHtml;
+                </div>`;
+
+            guidedStage.innerHTML = cardHtml;
         }
     </script>
 </body>

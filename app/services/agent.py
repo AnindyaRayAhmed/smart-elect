@@ -11,7 +11,7 @@ from app.services.intent_router import route_user_input, INTENT_KEYWORDS, _detec
 from app.services.llm_service import LLMService
 
 
-def process_user_input(raw_user_input: str) -> dict[str, Any]:
+def process_user_input(raw_user_input: str, mode: str = "guided") -> dict[str, Any]:
     """Run the full SmartElect rule-based pipeline for one message."""
     user_input = sanitize_input(raw_user_input)
 
@@ -27,15 +27,16 @@ def process_user_input(raw_user_input: str) -> dict[str, Any]:
             persona = _detect_persona(user_input, intent)
 
     context = build_context(user_input)
-    decision = generate_decision(intent=intent, persona=persona, context=context)
+    decision = generate_decision(intent=intent, persona=persona, context=context, user_input=user_input, mode=mode)
     
-    polished = LLMService.polish_response(
-        decision_content=str(decision.get("content", "")),
-        decision_next_step=str(decision.get("next_step", "")),
-        user_input=user_input
-    )
-    decision["content"] = polished["content"]
-    decision["next_step"] = polished["next_step"]
+    if mode == "guided":
+        polished = LLMService.polish_response(
+            decision_content=str(decision.get("content", "")),
+            decision_next_step=str(decision.get("next_step", "")),
+            user_input=user_input
+        )
+        decision["content"] = polished["content"]
+        decision["next_step"] = polished["next_step"]
 
     safe_decision = apply_safety_layer(user_input, decision)
 

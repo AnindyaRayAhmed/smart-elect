@@ -427,7 +427,7 @@
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text })
+                    body: JSON.stringify({ message: text, mode: 'guided' })
                 });
 
                 if (!response.ok) throw new Error('API Error');
@@ -454,7 +454,7 @@
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text })
+                    body: JSON.stringify({ message: text, mode: 'explore' })
                 });
 
                 if (!response.ok) throw new Error('API Error');

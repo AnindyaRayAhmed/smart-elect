@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 from app.services.civic_data import ELECTION_PROCESS, OFFICIAL_LINKS
+from app.services.llm_service import LLMService
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def _format_numbered_lines(lines: list[str]) -> str:
@@ -172,8 +176,25 @@ def _election_day_response() -> dict[str, str | float | bool]:
     }
 
 
-def _default_response(intent: str) -> dict[str, str | float | bool]:
+def _default_response(intent: str, user_input: str) -> dict[str, str | float | bool]:
     if intent == "out_of_scope":
+        prompt = (
+            "You are a civic assistant. Answer the user's question clearly and simply.\n"
+            "Stay within voting, elections, or civic processes in India.\n"
+            "If partially relevant, guide the user instead of rejecting.\n\n"
+            f"User: {user_input}"
+        )
+        response_text = LLMService._generate_completion(prompt)
+        if response_text:
+            logger.info("LLM_RESPONSE_USED")
+            return {
+                "title": "Civic Guidance",
+                "content": response_text,
+                "next_step": "Please ask any other civic questions you have.",
+                "confidence": 0.7,
+                "source": "AI-assisted civic guidance",
+            }
+            
         return {
             "title": "Out of Scope",
             "content": "This system supports voting, registration, and election-related guidance. Please specify your objective.",
@@ -191,8 +212,26 @@ def _default_response(intent: str) -> dict[str, str | float | bool]:
     }
 
 
-def generate_decision(intent: str, persona: str, context: dict[str, str]) -> dict[str, str | float | bool]:
+def generate_decision(intent: str, persona: str, context: dict[str, str], user_input: str = "", mode: str = "guided") -> dict[str, str | float | bool]:
     """Return a structured response based on intent, persona, and context."""
+    if mode == "explore":
+        prompt = (
+            "You are a civic assistant. Answer the user's question clearly and simply.\n"
+            "Stay within voting, elections, or civic processes in India.\n"
+            "If partially relevant, guide the user instead of rejecting.\n\n"
+            f"User: {user_input}"
+        )
+        response_text = LLMService._generate_completion(prompt)
+        if response_text:
+            logger.info("LLM_RESPONSE_USED")
+            return {
+                "title": "Explore Response",
+                "content": response_text,
+                "next_step": "Let me know if you need more details.",
+                "confidence": 0.7,
+                "source": "AI-assisted civic guidance",
+            }
+
     if intent == "learn_process":
         return _learn_process_response(persona)
     if intent == "timeline_info":
@@ -207,4 +246,4 @@ def generate_decision(intent: str, persona: str, context: dict[str, str]) -> dic
         return _candidate_compare_response()
     if intent == "election_day_preparation":
         return _election_day_response()
-    return _default_response(intent)
+    return _default_response(intent, user_input)

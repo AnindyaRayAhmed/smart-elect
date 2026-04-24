@@ -10,7 +10,7 @@ router = APIRouter()
 @router.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(payload: ChatRequest) -> dict[str, Any]:
     try:
-        response = process_user_input(payload.message)
+        response = process_user_input(payload.message, mode=payload.mode)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail="An error occurred while processing your request.")

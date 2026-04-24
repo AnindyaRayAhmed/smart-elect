@@ -23,9 +23,15 @@ class LLMService:
         try:
             if LLM_PROVIDER == "gemini":
                 import google.generativeai as genai
-                # Assuming api key is set via GOOGLE_API_KEY environment variable
+                
+                if not os.getenv("GOOGLE_API_KEY"):
+                    logger.error("GOOGLE_API_KEY missing")
+                    return None
+                    
+                genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
                 model = genai.GenerativeModel("gemini-1.5-flash")
                 response = model.generate_content(prompt)
+                logger.info("LLM CALL SUCCESS")
                 return response.text.strip()
             elif LLM_PROVIDER == "openai":
                 import openai
@@ -36,12 +42,13 @@ class LLMService:
                     messages=[{"role": "user", "content": prompt}],
                     temperature=0.0
                 )
+                logger.info("LLM CALL SUCCESS")
                 return response.choices[0].message.content.strip() if response.choices else None
             else:
                 logger.warning(f"Unknown LLM provider: {LLM_PROVIDER}")
                 return None
         except Exception as e:
-            logger.error(f"LLM integration failed: {e}")
+            logger.error(f"LLM FAILED: {str(e)}")
             return None
 
     @classmethod

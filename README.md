@@ -52,7 +52,158 @@ uvicorn app.main:app --reload
 Navigate to http://localhost:8000/
 ```
 
+## 🚀 Deployment Guide (Local + Google Cloud Run)
+
+---
+
+### 🖥️ Run Locally
+
+#### Prerequisites
+- Python 3.10+
+- pip
+- Gemini API Key (Google AI Studio)
+
+---
+
+#### 1. Clone the Repository
+
+```bash
+git clone https://github.com/your-username/smart-elect.git
+cd smart-elect
+```
+
+---
+
+#### 2. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+#### 3. Set Environment Variables
+
+**Windows (PowerShell):**
+```bash
+$env:GOOGLE_API_KEY="your_api_key_here"
+$env:LLM_ENABLED="true"
+$env:LLM_PROVIDER="gemini"
+```
+
+**Mac/Linux:**
+```bash
+export GOOGLE_API_KEY="your_api_key_here"
+export LLM_ENABLED="true"
+export LLM_PROVIDER="gemini"
+```
+
+---
+
+#### 4. Run the Application
+
+```bash
+uvicorn app.main:app --reload
+```
+
+Open in browser:
+```
+http://localhost:8000
+```
+
+---
+
+### ☁️ Deploy to Google Cloud Run
+
+#### Prerequisites
+- Google Cloud account
+- Billing enabled
+- gcloud CLI installed
+
+---
+
+#### 1. Authenticate & Set Project
+
+```bash
+gcloud auth login
+gcloud config set project YOUR_PROJECT_ID
+```
+
+---
+
+#### 2. Enable Required Services
+
+```bash
+gcloud services enable run.googleapis.com
+gcloud services enable cloudbuild.googleapis.com
+gcloud services enable artifactregistry.googleapis.com
+```
+
+---
+
+#### 3. Deploy to Cloud Run
+
+```bash
+gcloud run deploy smartelect \
+  --source . \
+  --region asia-south1 \
+  --platform managed \
+  --allow-unauthenticated
+```
+
+---
+
+#### 4. Set Environment Variables (IMPORTANT)
+
+After deployment:
+
+- Go to Cloud Run Console
+- Open your service → Edit & Deploy New Revision
+- Add the following variables:
+
+```
+GOOGLE_API_KEY=your_api_key_here
+LLM_ENABLED=true
+LLM_PROVIDER=gemini
+```
+
+- Click Deploy
+
+---
+
+#### 5. Access the Application
+
+Cloud Run will provide a public URL:
+
+```
+https://smartelect-xxxxx.run.app
+```
+
+Open it in your browser.
+
+---
+
+### 🧪 Quick Test
+
+**Explore Mode:**
+- Explain voting like a pizza party
+- Write a short poem about elections
+
+**Guided Mode:**
+- I am 25, Indian, from Kolkata
+
+---
+
+### ⚠️ Notes
+
+- Uses Gemini 2.5 Flash Lite via google-genai
+- Guided Mode → Deterministic engine + LLM interpretation
+- Explore Mode → Fully LLM-driven responses
+- Ensure API key is valid and has quota available
+
+
 ---
 <div align="center">
   <b>SmartElect</b> • <i>Clear, confident civic guidance.</i>
 </div>
+

@@ -26,7 +26,7 @@ def _learn_process_response(persona: str) -> dict[str, str | float | bool]:
             "title": "Guide: First-Time Voter",
             "content": _format_numbered_lines(steps),
             "next_step": "Validate your registration status immediately.",
-            "confidence": 0.95,
+            "confidence": 0.6,
             "source": "Election Commission Guidelines",
             "calendar_option": True,
             "event_title": "Check Voter Registration Status",
@@ -39,7 +39,7 @@ def _learn_process_response(persona: str) -> dict[str, str | float | bool]:
         "title": "Guide: Electoral Lifecycle",
         "content": _format_numbered_lines(ELECTION_PROCESS),
         "next_step": "Verify registration status prior to election day.",
-        "confidence": 0.98,
+        "confidence": 0.6,
         "source": "Election Commission Portal",
         "calendar_option": True,
         "event_title": "Election Day Reminder",
@@ -59,7 +59,7 @@ def _timeline_info_response() -> dict[str, str | float | bool]:
         "title": "Official Electoral Timelines",
         "content": _format_bullets(timeline_items),
         "next_step": "Lock registration deadlines into your calendar.",
-        "confidence": 1.0,
+        "confidence": 0.6,
         "source": "Official Timelines",
         "calendar_option": True,
         "event_title": "Voter Registration Deadline",
@@ -70,18 +70,31 @@ def _timeline_info_response() -> dict[str, str | float | bool]:
 
 
 def _eligibility_response(context: dict[str, str]) -> dict[str, str | float | bool]:
-    location = context.get("location", "the target constituency")
-    checklist = [
-        "Age >= 18 on the qualifying date.",
-        "Verified Indian citizenship.",
-        f"Primary residence established in {location}.",
-    ]
+    has_age = context.get("age") is not None
+    has_citizenship = context.get("citizenship") is not None
+    has_location = context.get("location") not in (None, "unknown")
+    
+    if has_age and has_citizenship and has_location:
+        checklist = [
+            "Age >= 18 on the qualifying date.",
+            "Verified Indian citizenship.",
+            f"Primary residence established in {context.get('location')}.",
+        ]
+        return {
+            "title": "Eligibility Verified",
+            "content": _format_bullets(checklist),
+            "next_step": "If criteria are met, initiate registration.",
+            "confidence": 0.95,
+            "source": "Voter Eligibility Act",
+            "is_verified": True,
+        }
+
     return {
         "title": "Eligibility Requirements",
-        "content": _format_bullets(checklist),
-        "next_step": "If criteria are met, initiate registration.",
-        "confidence": 1.0,
-        "source": "Voter Eligibility Act",
+        "content": "Eligibility cannot be determined without required inputs.\n\nRequired inputs:\n- Age\n- Citizenship status\n- Location",
+        "next_step": "Provide your age, citizenship status, and location to verify eligibility.",
+        "confidence": 0.6,
+        "source": "System Requirements",
     }
 
 
@@ -97,7 +110,7 @@ def _registration_help_response() -> dict[str, str | float | bool]:
         "title": "Registration Guide",
         "content": _format_numbered_lines(steps) + f"\n\nPortal: {OFFICIAL_LINKS['NVSP']}",
         "next_step": "Assemble identity documents before initiating process.",
-        "confidence": 0.96,
+        "confidence": 0.6,
         "source": "NVSP Portal",
     }
 
@@ -113,7 +126,7 @@ def _booth_lookup_response() -> dict[str, str | float | bool]:
         "title": "Polling Station Locator",
         "content": _format_numbered_lines(steps) + f"\n\nDatabase: {OFFICIAL_LINKS['electoral_search']}",
         "next_step": "You can search using your EPIC number.",
-        "confidence": 0.99,
+        "confidence": 0.6,
         "source": "Electoral Search",
     }
 
@@ -132,7 +145,7 @@ def _candidate_compare_response() -> dict[str, str | float | bool]:
         "title": "Candidate Evaluation Guide",
         "content": _format_bullets(template),
         "next_step": "Populate matrix using only official public disclosures.",
-        "confidence": 0.92,
+        "confidence": 0.6,
         "source": "Neutral Governance Best Practices",
     }
 
@@ -149,7 +162,7 @@ def _election_day_response() -> dict[str, str | float | bool]:
         "title": "Election Day Steps",
         "content": _format_numbered_lines(steps),
         "next_step": "Ensure ID and polling details are secured T-minus 24 hours.",
-        "confidence": 0.97,
+        "confidence": 0.6,
         "source": "Election Day Guidelines",
         "calendar_option": True,
         "event_title": "Voting Day",
@@ -160,11 +173,20 @@ def _election_day_response() -> dict[str, str | float | bool]:
 
 
 def _default_response(intent: str) -> dict[str, str | float | bool]:
+    if intent == "out_of_scope":
+        return {
+            "title": "Out of Scope",
+            "content": "This system supports voting, registration, and election-related guidance. Please specify your objective.",
+            "next_step": "Provide a valid civic query.",
+            "confidence": 0.6,
+            "source": "SmartElect System",
+        }
+        
     return {
         "title": "Ready to help",
         "content": f"I'm ready to help you. It looks like you're asking about: [{intent}].",
         "next_step": "What specific information do you need? (e.g., 'How do I verify my eligibility?')",
-        "confidence": 0.5,
+        "confidence": 0.6,
         "source": "SmartElect System",
     }
 

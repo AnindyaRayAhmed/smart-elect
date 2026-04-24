@@ -1,8 +1,9 @@
 """LLM Service for SmartElect intent assistance and response polishing."""
 
+import json
 import logging
 import os
-from typing import Optional
+from typing import Optional, Any
 
 logger = logging.getLogger(__name__)
 
@@ -52,54 +53,79 @@ class LLMService:
             return None
 
     @classmethod
-    def assist_intent(cls, user_input: str, allowed_intents: list[str]) -> Optional[str]:
-        """Attempt to map unclear user input to a known structured intent."""
+    def interpret_user_input(cls, user_input: str) -> dict[str, Any]:
+        """Extract intent and entities from user input, returning strict JSON."""
         if not LLM_ENABLED:
-            return None
+            return {"intent": None, "entities": {}, "confidence": 0.0}
 
         prompt = (
-            f"You are a routing assistant for a deterministic civic platform.\n"
-            f"Map the user input to exactly one of the following intents: {allowed_intents}.\n"
-            f"If it does not clearly match any of them, reply with 'out_of_scope'.\n"
-            f"Reply with ONLY the intent name, nothing else.\n\n"
+            "You are a routing and extraction assistant for a deterministic civic platform in India.\n"
+            "Analyze the following user input and extract the intent and entities.\n"
+            "Valid intents are: 'learn_process', 'eligibility_check', 'timeline_info', "
+            "'booth_lookup', 'candidate_compare', 'registration_help', "
+            "'document_requirements', 'election_day_preparation', 'faq'.\n"
+            "If the intent is unclear or does not match these, output null for intent.\n"
+            "Extract these entities if present: 'age' (number), 'citizenship' ('indian' or 'non-indian'), 'location' (string).\n"
+            "If an entity is not present, output null for it.\n"
+            "NEVER hallucinate missing values.\n\n"
+            "OUTPUT FORMAT MUST BE EXACTLY THIS JSON (no other text or markdown tags):\n"
+            "{\n"
+            '  "intent": "...",\n'
+            '  "entities": {\n'
+            '    "age": null,\n'
+            '    "citizenship": null,\n'
+            '    "location": null\n'
+            "  },\n"
+            '  "confidence": 0.0\n'
+            "}\n\n"
             f"User input: \"{user_input}\""
         )
         
         response_text = cls._generate_completion(prompt)
         
-        if response_text and response_text in allowed_intents:
-            return response_text
+        if not response_text:
+            return {"intent": None, "entities": {}, "confidence": 0.0}
             
-        return "out_of_scope"
+        try:
+            # Strip markdown formatting if the LLM adds it
+            clean_json = response_text.replace('```json', '').replace('```', '').strip()
+            parsed = json.loads(clean_json)
+            logger.info("LLM_INTERPRET_USED")
+            return {
+                "intent": parsed.get("intent"),
+                "entities": parsed.get("entities", {}),
+                "confidence": parsed.get("confidence", 0.0)
+            }
+        except Exception as e:
+            logger.error(f"LLM JSON PARSING FAILED: {str(e)}")
+            return {"intent": None, "entities": {}, "confidence": 0.0}
 
     @classmethod
-    def polish_response(cls, decision_content: str, decision_next_step: str, user_input: str) -> dict[str, str]:
-        """Polish the structured response for clarity and flow, ensuring a calm, neutral tone."""
+    def generate_explore_response(cls, user_input: str) -> Optional[str]:
+        """Generate a full conversational response for Explore Mode."""
         if not LLM_ENABLED:
-            return {"content": decision_content, "next_step": decision_next_step}
+            return None
 
         prompt = (
-            f"You are a highly structured, calm, and neutral civic assistant.\n"
-            f"Your task is to rewrite the provided content and next step to improve readability, flow, and natural language.\n"
-            f"CRITICAL RULES:\n"
-            f"- Preserve the exact semantic meaning and all steps.\n"
-            f"- Do NOT add new information, advice, or external links.\n"
-            f"- Do NOT introduce opinions or evaluate any political entities.\n"
-            f"- Maintain a calm, neutral, and professional tone. Avoid overly enthusiastic or cheerful phrasing (no exclamation points or hyperbole).\n"
-            f"- Format the output clearly. Keep steps numbered or bulleted if they were originally.\n\n"
-            f"Original User Input: \"{user_input}\"\n\n"
-            f"Original Content:\n{decision_content}\n\n"
-            f"Original Next Step:\n{decision_next_step}\n\n"
-            f"Output the rewritten Content, followed by a '|||' separator, followed by the rewritten Next Step."
+            "You are SmartElect, a civic assistant for India.\n\n"
+            "Your role:\n"
+            "* Explain voting, registration, elections, and civic processes clearly\n"
+            "* Adapt tone dynamically based on user input (e.g., Gen Z, simple explanation, analogy requests)\n"
+            "* If user explicitly asks for analogy (e.g., pizza, cricket), follow it\n"
+            "* Be conversational and natural, not robotic\n\n"
+            "STRICT RULES:\n"
+            "* Do NOT fabricate laws, deadlines, or official data\n"
+            '* If unsure -> say "This may vary by state or election cycle"\n'
+            "* Do NOT claim user eligibility unless explicitly confirmed\n"
+            "* No political bias, opinions, or persuasion\n\n"
+            "STYLE:\n"
+            "* Clear, structured but natural\n"
+            "* Use examples, analogies when useful\n"
+            "* Avoid robotic tone\n\n"
+            f"User input: \"{user_input}\""
         )
 
         response_text = cls._generate_completion(prompt)
-        
-        if not response_text or "|||" not in response_text:
-            return {"content": decision_content, "next_step": decision_next_step}
-            
-        parts = response_text.split("|||", 1)
-        return {
-            "content": parts[0].strip(),
-            "next_step": parts[1].strip()
-        }
+        if response_text:
+            logger.info("LLM_EXPLORE_USED")
+        return response_text

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from app.services.civic_data import ELECTION_PROCESS, OFFICIAL_LINKS
-from app.services.llm_service import LLMService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -93,10 +92,29 @@ def _eligibility_response(context: dict[str, str]) -> dict[str, str | float | bo
             "is_verified": True,
         }
 
+    # Explicitly list what is still missing
+    missing = []
+    if not has_age:
+        missing.append("Age")
+    if not has_citizenship:
+        missing.append("Citizenship status")
+    if not has_location:
+        missing.append("Location")
+
+    missing_list = "\n".join(f"- {item}" for item in missing)
+    provided = []
+    if has_age:
+        provided.append(f"Age: {context.get('age')}")
+    if has_citizenship:
+        provided.append(f"Citizenship: {context.get('citizenship')}")
+    if has_location:
+        provided.append(f"Location: {context.get('location')}")
+    provided_text = ("\n\nReceived so far:\n" + "\n".join(f"- {p}" for p in provided)) if provided else ""
+
     return {
-        "title": "Eligibility Requirements",
-        "content": "Eligibility cannot be determined without required inputs.\n\nRequired inputs:\n- Age\n- Citizenship status\n- Location",
-        "next_step": "Provide your age, citizenship status, and location to verify eligibility.",
+        "title": "Eligibility — Additional Information Required",
+        "content": f"Eligibility cannot be determined yet. The following inputs are still required:\n{missing_list}{provided_text}",
+        "next_step": f"Please provide: {', '.join(missing)}.",
         "confidence": 0.6,
         "source": "System Requirements",
     }
@@ -178,27 +196,10 @@ def _election_day_response() -> dict[str, str | float | bool]:
 
 def _default_response(intent: str, user_input: str) -> dict[str, str | float | bool]:
     if intent == "out_of_scope":
-        prompt = (
-            "You are a civic assistant. Answer the user's question clearly and simply.\n"
-            "Stay within voting, elections, or civic processes in India.\n"
-            "If partially relevant, guide the user instead of rejecting.\n\n"
-            f"User: {user_input}"
-        )
-        response_text = LLMService._generate_completion(prompt)
-        if response_text:
-            logger.info("LLM_RESPONSE_USED")
-            return {
-                "title": "Civic Guidance",
-                "content": response_text,
-                "next_step": "Please ask any other civic questions you have.",
-                "confidence": 0.7,
-                "source": "AI-assisted civic guidance",
-            }
-            
         return {
-            "title": "Out of Scope",
-            "content": "This system supports voting, registration, and election-related guidance. Please specify your objective.",
-            "next_step": "Provide a valid civic query.",
+            "title": "Outside Supported Topics",
+            "content": "This query falls outside the scope of SmartElect. This system provides guidance on voting, voter registration, eligibility, polling stations, and election-day preparation.",
+            "next_step": "Try asking about voter eligibility, registration, polling locations, or the election process.",
             "confidence": 0.6,
             "source": "SmartElect System",
         }
@@ -213,25 +214,11 @@ def _default_response(intent: str, user_input: str) -> dict[str, str | float | b
 
 
 def generate_decision(intent: str, persona: str, context: dict[str, str], user_input: str = "", mode: str = "guided") -> dict[str, str | float | bool]:
-    """Return a structured response based on intent, persona, and context."""
-    if mode == "explore":
-        prompt = (
-            "You are a civic assistant. Answer the user's question clearly and simply.\n"
-            "Stay within voting, elections, or civic processes in India.\n"
-            "If partially relevant, guide the user instead of rejecting.\n\n"
-            f"User: {user_input}"
-        )
-        response_text = LLMService._generate_completion(prompt)
-        if response_text:
-            logger.info("LLM_RESPONSE_USED")
-            return {
-                "title": "Explore Response",
-                "content": response_text,
-                "next_step": "Let me know if you need more details.",
-                "confidence": 0.7,
-                "source": "AI-assisted civic guidance",
-            }
-
+    """Return a structured response based on intent, persona, and context.
+    
+    This function is only called for Guided Mode.
+    Explore Mode is handled directly in agent.py via LLMService.
+    """
     if intent == "learn_process":
         return _learn_process_response(persona)
     if intent == "timeline_info":

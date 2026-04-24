@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=1000, description="User's query")
     mode: str = Field("guided", description="Mode of operation: 'guided' or 'explore'")
+    session_id: str | None = Field(None, description="Optional session ID for context tracking")
 
 
 class ChatResponse(BaseModel):
@@ -19,3 +20,5 @@ class ChatResponse(BaseModel):
     event_description: str | None = None
     event_date: str | None = None
     calendar_event: str | None = None
+    session_id: str | None = None
+    is_verified: bool = False

@@ -215,6 +215,7 @@
         // ── State ──
         let currentMode = 'guided'; // 'guided' | 'explore'
         let isProcessing = false;
+        let sessionId = null;
 
         // ── DOM refs ──
         const form = document.getElementById('query-form');
@@ -427,11 +428,12 @@
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text, mode: 'guided' })
+                    body: JSON.stringify({ message: text, mode: 'guided', session_id: sessionId })
                 });
 
                 if (!response.ok) throw new Error('API Error');
                 const data = await response.json();
+                if (data.session_id) sessionId = data.session_id;
                 setTimeout(() => renderGuidedCard(data), 600);
             } catch (err) {
                 setTimeout(() => {
@@ -454,11 +456,12 @@
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text, mode: 'explore' })
+                    body: JSON.stringify({ message: text, mode: 'explore', session_id: sessionId })
                 });
 
                 if (!response.ok) throw new Error('API Error');
                 const data = await response.json();
+                if (data.session_id) sessionId = data.session_id;
 
                 removeTypingIndicator();
 

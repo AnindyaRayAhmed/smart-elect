@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 from typing import Any
+import uuid
 
 from app.core.security import apply_safety_layer, sanitize_input
 from app.services.context_builder import build_context
@@ -10,34 +11,61 @@ from app.services.google_calendar import generate_ics_event
 from app.services.intent_router import route_user_input, INTENT_KEYWORDS, _detect_persona
 from app.services.llm_service import LLMService
 
+_SESSION_STORE: dict[str, dict[str, Any]] = {}
 
-def process_user_input(raw_user_input: str, mode: str = "guided") -> dict[str, Any]:
-    """Run the full SmartElect rule-based pipeline for one message."""
+def process_user_input(raw_user_input: str, mode: str = "guided", session_id: str | None = None) -> dict[str, Any]:
+    """Run the full SmartElect pipeline for one message."""
     user_input = sanitize_input(raw_user_input)
-
-    routing = route_user_input(user_input)
-    intent = routing["intent"]
-    persona = routing["persona"]
-
-    if intent == "out_of_scope":
-        allowed_intents = list(INTENT_KEYWORDS.keys())
-        assisted_intent = LLMService.assist_intent(user_input, allowed_intents)
-        if assisted_intent and assisted_intent != "out_of_scope":
-            intent = assisted_intent
-            persona = _detect_persona(user_input, intent)
-
-    context = build_context(user_input)
-    decision = generate_decision(intent=intent, persona=persona, context=context, user_input=user_input, mode=mode)
     
-    if mode == "guided":
-        polished = LLMService.polish_response(
-            decision_content=str(decision.get("content", "")),
-            decision_next_step=str(decision.get("next_step", "")),
-            user_input=user_input
-        )
-        decision["content"] = polished["content"]
-        decision["next_step"] = polished["next_step"]
+    if not session_id:
+        session_id = str(uuid.uuid4())
+        
+    if session_id not in _SESSION_STORE:
+        _SESSION_STORE[session_id] = {}
+        
+    session_context = _SESSION_STORE[session_id]
 
+    if mode == "explore":
+        llm_response = LLMService.generate_explore_response(user_input)
+        if not llm_response:
+            llm_response = "The system is temporarily unable to generate a response. Please try again."
+        
+        return {
+            "intent": "explore",
+            "persona": "general",
+            "response": llm_response,
+            "title": "Conversational Assistant",
+            "next_step": "Ask any other civic questions.",
+            "confidence": 0.9,
+            "source": "LLM Generated",
+            "session_id": session_id
+        }
+
+    # Guided Mode
+    interpretation = LLMService.interpret_user_input(user_input)
+    
+    # Merge extracted entities into session context
+    for key, value in interpretation.get("entities", {}).items():
+        if value is not None:
+            session_context[key] = value
+            
+    # Also build basic rule-based context and merge
+    base_context = build_context(user_input)
+    for k, v in base_context.items():
+        if k not in session_context or session_context[k] == "unknown":
+            session_context[k] = v
+
+    # Intent resolution
+    llm_intent = interpretation.get("intent")
+    routing = route_user_input(user_input)
+    
+    intent = llm_intent if llm_intent else routing["intent"]
+    persona = routing["persona"]
+    
+    if intent not in INTENT_KEYWORDS and intent != "out_of_scope":
+        intent = routing["intent"]
+
+    decision = generate_decision(intent=intent, persona=persona, context=session_context, user_input=user_input, mode=mode)
     safe_decision = apply_safety_layer(user_input, decision)
 
     response: dict[str, Any] = {
@@ -48,6 +76,8 @@ def process_user_input(raw_user_input: str, mode: str = "guided") -> dict[str, A
         "next_step": safe_decision["next_step"],
         "confidence": safe_decision.get("confidence", 0.8),
         "source": safe_decision.get("source", "SmartElect Default"),
+        "is_verified": safe_decision.get("is_verified", False),
+        "session_id": session_id
     }
 
     if bool(safe_decision.get("calendar_option")):

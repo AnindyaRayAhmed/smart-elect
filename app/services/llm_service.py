@@ -23,17 +23,27 @@ class LLMService:
 
         try:
             if LLM_PROVIDER == "gemini":
-                import google.generativeai as genai
+                from google import genai
                 
                 if not os.getenv("GOOGLE_API_KEY"):
                     logger.error("GOOGLE_API_KEY missing")
                     return None
                     
-                genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-                model = genai.GenerativeModel("gemini-1.5-flash")
-                response = model.generate_content(prompt)
+                client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash-lite",
+                    contents=prompt
+                )
                 logger.info("LLM CALL SUCCESS")
-                return response.text.strip()
+                # Primary path
+                if hasattr(response, "text") and response.text:
+                    return response.text.strip()
+                # Fallback for Gemini 2.5 response structure
+                try:
+                    return response.candidates[0].content.parts[0].text.strip()
+                except Exception:
+                    logger.error("LLM RESPONSE PARSING FAILED")
+                    return None
             elif LLM_PROVIDER == "openai":
                 import openai
                 # Assuming api key is set via OPENAI_API_KEY environment variable

@@ -10,6 +10,8 @@ from app.services.decision_engine import generate_decision
 from app.services.google_calendar import generate_ics_event
 from app.services.intent_router import route_user_input, INTENT_KEYWORDS, _detect_persona
 from app.services.llm_service import LLMService
+from app.services.firestore_service import log_interaction
+from app.core.logger import RequestLogger
 
 _SESSION_STORE: dict[str, dict[str, Any]] = {}
 
@@ -20,17 +22,22 @@ def process_user_input(raw_user_input: str, mode: str = "guided", session_id: st
     if not session_id:
         session_id = str(uuid.uuid4())
         
+    req_logger = RequestLogger(session_id=session_id)
+    req_logger.log_stage("INPUT_RECEIVED", component="intent_router", input=raw_user_input)
+        
     if session_id not in _SESSION_STORE:
         _SESSION_STORE[session_id] = {}
         
     session_context = _SESSION_STORE[session_id]
 
     if mode == "explore":
+        req_logger.log_stage("INTENT_PARSED", component="intent_router", intent="explore", entities={})
+        
         llm_response = LLMService.generate_explore_response(user_input)
         if not llm_response:
             llm_response = "The system is temporarily unable to generate a response. Please try again."
         
-        return {
+        response = {
             "intent": "explore",
             "persona": "general",
             "response": llm_response,
@@ -40,7 +47,21 @@ def process_user_input(raw_user_input: str, mode: str = "guided", session_id: st
             "source": "LLM Generated",
             "session_id": session_id
         }
+        
+        req_logger.log_stage("DECISION_COMPLETED", component="decision_engine", decision_output=llm_response)
+        
+        try:
+            log_interaction(
+                session_id=session_id,
+                user_input=raw_user_input,
+                intent=response.get("intent", "explore"),
+                decision_output=response.get("response", "")
+            )
+        except Exception:
+            pass
 
+        req_logger.log_stage("RESPONSE_SENT", component="response")
+        return response
     # Guided Mode
     interpretation = LLMService.interpret_user_input(user_input)
     
@@ -55,18 +76,27 @@ def process_user_input(raw_user_input: str, mode: str = "guided", session_id: st
         if k not in session_context or session_context[k] == "unknown":
             session_context[k] = v
 
-    # Intent resolution
+    # Intent resolution — skip redundant rule-based intent detection
+    # when the LLM already returned a high-confidence valid intent.
     llm_intent = interpretation.get("intent")
-    routing = route_user_input(user_input)
-    
-    intent = llm_intent if llm_intent else routing["intent"]
+    llm_confidence = interpretation.get("confidence", 0.0)
+    routing = route_user_input(user_input)  # always needed for persona
+
+    if llm_intent and llm_intent in INTENT_KEYWORDS and llm_confidence >= 0.8:
+        intent = llm_intent
+    else:
+        intent = llm_intent if (llm_intent and llm_intent in INTENT_KEYWORDS) else routing["intent"]
+        if intent not in INTENT_KEYWORDS and intent != "out_of_scope":
+            intent = routing["intent"]
+
     persona = routing["persona"]
-    
-    if intent not in INTENT_KEYWORDS and intent != "out_of_scope":
-        intent = routing["intent"]
+
+    req_logger.log_stage("INTENT_PARSED", component="intent_router", intent=intent, entities=interpretation.get("entities", {}))
 
     decision = generate_decision(intent=intent, persona=persona, context=session_context, user_input=user_input, mode=mode)
     safe_decision = apply_safety_layer(user_input, decision)
+
+    req_logger.log_stage("DECISION_COMPLETED", component="decision_engine", decision_output=safe_decision.get("content", ""))
 
     response: dict[str, Any] = {
         "intent": intent,
@@ -92,4 +122,15 @@ def process_user_input(raw_user_input: str, mode: str = "guided", session_id: st
             event_type=str(safe_decision.get("event_type", "general")),
         )
 
+    try:
+        log_interaction(
+            session_id=session_id,
+            user_input=raw_user_input,
+            intent=response.get("intent", "unknown"),
+            decision_output=response.get("response", "")
+        )
+    except Exception:
+        pass
+
+    req_logger.log_stage("RESPONSE_SENT", component="response")
     return response

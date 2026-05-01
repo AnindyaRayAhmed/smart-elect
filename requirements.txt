@@ -4,3 +4,4 @@ pydantic
 google-genai
 openai
 python-multipart
+google-cloud-firestore

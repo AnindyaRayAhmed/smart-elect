@@ -5,12 +5,13 @@ from google.cloud import storage
 
 def export_voter_guide(decision_output: str) -> str:
     """
-    Uploads the decision output to Google Cloud Storage and returns a signed URL.
+    Uploads the decision output to Google Cloud Storage and returns a public URL.
     Returns a user-facing error message if any error occurs.
     """
     try:
+        bucket_name = "smartelect-user-exports"
         client = storage.Client()
-        bucket = client.bucket("smartelect-user-exports")
+        bucket = client.bucket(bucket_name)
 
         file_uuid = str(uuid.uuid4())
         blob = bucket.blob(f"guide_{file_uuid}.json")
@@ -25,14 +26,12 @@ def export_voter_guide(decision_output: str) -> str:
             content_type="application/json"
         )
 
-        url = blob.generate_signed_url(
-            version="v4",
-            expiration=600,
-            method="GET"
-        )
+        blob.make_public()
+
+        url = f"https://storage.googleapis.com/{bucket_name}/{blob.name}"
 
         print("GCS_UPLOAD_SUCCESS:", blob.name)
-        print("SIGNED_URL:", url)
+        print("PUBLIC_URL:", url)
         return url
     except Exception as e:
         print("GCS_ERROR:", str(e))

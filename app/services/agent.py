@@ -12,6 +12,8 @@ from app.services.intent_router import route_user_input, INTENT_KEYWORDS, _detec
 from app.services.llm_service import LLMService
 from app.services.firestore_service import log_interaction
 from app.core.logger import RequestLogger
+from app.services.maps_utils import generate_maps_link
+from app.services.storage_service import export_voter_guide
 
 _SESSION_STORE: dict[str, dict[str, Any]] = {}
 
@@ -98,10 +100,25 @@ def process_user_input(raw_user_input: str, mode: str = "guided", session_id: st
 
     req_logger.log_stage("DECISION_COMPLETED", component="decision_engine", decision_output=safe_decision.get("content", ""))
 
+    enhanced_content = safe_decision["content"]
+    
+    # Google Maps Integration
+    location = session_context.get("location")
+    if location or intent == "booth_lookup":
+        maps_link = generate_maps_link(location) if location else ""
+        if maps_link:
+            enhanced_content += f"\n\nView on Google Maps: {maps_link}"
+            
+    # Google Cloud Storage Export
+    if intent == "election_day_preparation":
+        signed_url = export_voter_guide(enhanced_content)
+        if signed_url:
+            enhanced_content += f"\n\nDownload your voter checklist: {signed_url}"
+
     response: dict[str, Any] = {
         "intent": intent,
         "persona": persona,
-        "response": safe_decision["content"],
+        "response": enhanced_content,
         "title": safe_decision["title"],
         "next_step": safe_decision["next_step"],
         "confidence": safe_decision.get("confidence", 0.8),

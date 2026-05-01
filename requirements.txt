@@ -5,3 +5,5 @@ google-genai
 openai
 python-multipart
 google-cloud-firestore
+google-cloud-storage
+requests

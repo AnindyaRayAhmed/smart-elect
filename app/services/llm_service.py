@@ -44,20 +44,24 @@ class _IntentCache:
 
         self._cached_fn = _cached_interpret
 
-    def get(self, normalized_input: str) -> Optional[dict[str, Any]]:
-        """Return cached result if fresh, or None to signal a miss."""
+    def get(self, normalized_input: str) -> tuple[Optional[dict[str, Any]], bool]:
+        """Return (result, is_hit)."""
+        is_hit = False
         cached_time = self._timestamps.get(normalized_input)
-        if cached_time is not None and (time.monotonic() - cached_time) > self._ttl:
-            # Evict stale entry
-            self._timestamps.pop(normalized_input, None)
-            self._cached_fn.cache_clear()
-            return None
+        
+        if cached_time is not None:
+            if (time.monotonic() - cached_time) <= self._ttl:
+                is_hit = True
+            else:
+                # Evict stale entry
+                self._timestamps.pop(normalized_input, None)
+                self._cached_fn.cache_clear()
 
         try:
             raw = self._cached_fn(normalized_input)
-            return json.loads(raw)
+            return json.loads(raw), is_hit
         except Exception:
-            return None
+            return None, False
 
     def clear(self) -> None:
         """Clear all cached entries (useful for testing)."""
@@ -197,14 +201,14 @@ class LLMService:
             return {"intent": None, "entities": {}, "confidence": 0.0}
 
         normalized = _normalize_cache_key(user_input)
-        cached_result = _intent_cache.get(normalized)
+        cached_result, is_hit = _intent_cache.get(normalized)
 
-        if cached_result is not None:
+        if is_hit:
             logger.info("LLM_INTERPRET_CACHE_HIT")
-            return cached_result
+        else:
+            logger.info("LLM_INTERPRET_CACHE_MISS")
 
-        logger.info("LLM_INTERPRET_CACHE_MISS")
-        return _intent_cache.get(normalized) or {"intent": None, "entities": {}, "confidence": 0.0}
+        return cached_result or {"intent": None, "entities": {}, "confidence": 0.0}
 
     @classmethod
     def generate_explore_response(cls, user_input: str) -> Optional[str]:

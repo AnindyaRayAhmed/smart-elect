@@ -123,7 +123,8 @@ def process_user_input(raw_user_input: str, mode: str = "guided", session_id: st
     if intent == "election_day_preparation" or _election_day_fallback:
         download_url = export_voter_guide(enhanced_content)
         print("STORAGE_TRIGGERED:", download_url)
-        enhanced_content += f"\n\nDownload your voter checklist: {download_url}"
+        if download_url and download_url.startswith("http"):
+            enhanced_content += f"\n\nDownload your voter checklist: {download_url}"
 
     response: dict[str, Any] = {
         "intent": intent,

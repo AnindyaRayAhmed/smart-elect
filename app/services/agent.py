@@ -95,6 +95,16 @@ def process_user_input(raw_user_input: str, mode: str = "guided", session_id: st
 
     req_logger.log_stage("INTENT_PARSED", component="intent_router", intent=intent, entities=interpretation.get("entities", {}))
 
+    # Keyword-based fallback for election day preparation export.
+    # When the LLM fails to classify the intent as "election_day_preparation",
+    # this ensures GCS export is still triggered for common election-day queries.
+    _ELECTION_DAY_FALLBACK_KEYWORDS = (
+        "election day", "voting day", "what should i do",
+        "what to carry", "checklist",
+    )
+    _normalized_input = user_input.lower()
+    _election_day_fallback = any(kw in _normalized_input for kw in _ELECTION_DAY_FALLBACK_KEYWORDS)
+
     decision = generate_decision(intent=intent, persona=persona, context=session_context, user_input=user_input, mode=mode)
     safe_decision = apply_safety_layer(user_input, decision)
 
@@ -109,8 +119,8 @@ def process_user_input(raw_user_input: str, mode: str = "guided", session_id: st
         if maps_link:
             enhanced_content += f"\n\nView on Google Maps: {maps_link}"
             
-    # Google Cloud Storage Export
-    if intent == "election_day_preparation":
+    # Google Cloud Storage Export — triggered by intent OR keyword fallback
+    if intent == "election_day_preparation" or _election_day_fallback:
         signed_url = export_voter_guide(enhanced_content)
         if signed_url:
             enhanced_content += f"\n\nDownload your voter checklist: {signed_url}"

@@ -112,18 +112,18 @@ def process_user_input(raw_user_input: str, mode: str = "guided", session_id: st
 
     enhanced_content = safe_decision["content"]
     
-    # Google Maps Integration
-    location = session_context.get("location")
-    if location or intent == "booth_lookup":
+    # Google Maps Integration — strictly booth_lookup only
+    if intent == "booth_lookup":
+        location = session_context.get("location")
         maps_link = generate_maps_link(location) if location else ""
         if maps_link:
             enhanced_content += f"\n\nView on Google Maps: {maps_link}"
             
     # Google Cloud Storage Export — triggered by intent OR keyword fallback
     if intent == "election_day_preparation" or _election_day_fallback:
-        signed_url = export_voter_guide(enhanced_content)
-        if signed_url:
-            enhanced_content += f"\n\nDownload your voter checklist: {signed_url}"
+        download_url = export_voter_guide(enhanced_content)
+        print("STORAGE_TRIGGERED:", download_url)
+        enhanced_content += f"\n\nDownload your voter checklist: {download_url}"
 
     response: dict[str, Any] = {
         "intent": intent,
